@@ -65,40 +65,53 @@ public class GameDirector : MonoBehaviour
         resultGroup.SetActive(false);
     }
 
+    // 変数を追加：一度復活したかどうかのフラグ
+    private bool hasRevived = false; 
+
     public void StartGame()
     {
-        // ゲーム開始（リセット）
         scoreTime = 0f;
         gameSpeed = baseSpeed;
         isPlaying = true;
+        hasRevived = false; // フラグもリセット
 
         titleGroup.SetActive(false);
         gameGroup.SetActive(true);
         resultGroup.SetActive(false);
-        
-        Debug.Log("ゲームスタート！");
+
+        // プレイヤーを表示して位置を戻す（プレイヤー側の関数を呼ぶ）
+        GameObject player = GameObject.FindWithTag("Player");
+        if(player != null) player.GetComponent<PlayerController>().ResetPosition();
     }
 
-    // ゲームオーバー（プレイヤーが当たったら呼ぶ）
     public void GameOver()
     {
         isPlaying = false;
-        
-        // 少し待ってからリザルトを出すなどの演出もここでできる
         titleGroup.SetActive(false);
-        gameGroup.SetActive(true); // 背景として残すならTrue
+        gameGroup.SetActive(true);
         resultGroup.SetActive(true);
-        
-        Debug.Log("ゲームオーバー...");
+
+        // ★復活ボタンの制御：もう復活済みならボタンを隠す
+        GameObject adButton = resultGroup.transform.Find("AdButton").gameObject; 
+        // ↑名前が違う場合はInspectorで確認して合わせるか、public変数で持たせてもOK
+        if(adButton != null)
+        {
+            adButton.SetActive(!hasRevived); // まだ復活してないなら表示
+        }
     }
 
-    // 広告を見て復活（後で中身を書く）
+    // 広告視聴後に呼ばれる本当の復活処理
     public void ReviveGame()
     {
-        resultGroup.SetActive(false);
-        isPlaying = true;
-        Debug.Log("復活！");
-        
-        // 無敵時間の処理などを後で追加
+        hasRevived = true; // 復活済みフラグON
+        resultGroup.SetActive(false); // リザルト消す
+        isPlaying = true; // 時間を動かす
+
+        // プレイヤーを復活（無敵モード付きで）
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player != null)
+        {
+            player.SetActive(true); // 表示
+            player.GetComponent<PlayerController>().Revive(); // 復活処理
+        }
     }
-}
