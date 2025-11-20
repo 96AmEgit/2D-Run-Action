@@ -1,0 +1,19 @@
+using UnityEngine;
+
+public class CameraController : MonoBehaviour
+{
+    public Transform target; // 追いかける対象（Player）
+    public float offsetX = 5.0f; // プレイヤーより少し右を映す
+
+    void Update()
+    {
+        // ターゲット（プレイヤー）がいて、かつゲーム中なら追いかける
+        if (target != null)
+        {
+            // X座標だけ追いかける（Y座標は固定）
+            Vector3 pos = transform.position;
+            pos.x = target.position.x + offsetX;
+            transform.position = pos;
+        }
+    }
+}
