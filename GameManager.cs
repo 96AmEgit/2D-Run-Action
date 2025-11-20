@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
         Instance = this;
     }
 
-    // �V�[���J�n���ɕK�� Title ��Ԃ�
+    // シーン開始時に必ず Title 状態へ
     void Start()
     {
         SetState(GameState.Title);
@@ -46,6 +46,7 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
+        Debug.Log("誰かがStartGameを呼びました！ 呼び出し元: \n" + System.Environment.StackTrace);
         playTime = 0f;
         SetState(GameState.Playing);
     }
@@ -70,3 +71,4 @@ public class GameManager : MonoBehaviour
         gameOverPanel.SetActive(state == GameState.GameOver);
     }
 }
+
