@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Advertisements; // 広告用
 
-public class SceneLoaderButton : MonoBehaviour, IUnityAdsInitializationListener, IUnityAdsLoadListener, IUnityAdsShowListener
+// 古いバージョン(Legacy)に対応したインターフェースに変更しました
+public class SceneLoaderButton : MonoBehaviour, IUnityAdsListener
 {
     [Header("Scene Settings")]
     public string targetSceneName; // 移動先のシーン名
@@ -16,43 +17,29 @@ public class SceneLoaderButton : MonoBehaviour, IUnityAdsInitializationListener,
     private string _gameId;
     private string _adUnitId = "Interstitial_Android"; // 全画面広告用ID
 
-    // ゲームを遊んだ回数（staticなのでシーン移動しても数字が残る）
+    // ゲームを遊んだ回数
     private static int gameCount = 0;
-
-    void Awake()
-    {
-        InitializeAds();
-    }
 
     void Start()
     {
-        objectDestroyer = FindObjectOfType<ObjectDestroyer>(); // スコア管理クラスを取得
-    }
+        objectDestroyer = FindObjectOfType<ObjectDestroyer>();
 
-    // --- 1. 広告の初期化 ---
-    public void InitializeAds()
-    {
         _gameId = (Application.platform == RuntimePlatform.IPhonePlayer) ? _iOSGameId : _androidGameId;
-        
-        if (!Advertisement.isInitialized && Advertisement.isSupported)
+
+        // ★重要：リスナー（見張り番）を登録
+        Advertisement.AddListener(this);
+
+        // 初期化（Legacy版の書き方）
+        if (!Advertisement.isInitialized)
         {
-            Advertisement.Initialize(_gameId, _testMode, this);
-        }
-        else
-        {
-            LoadAd();
+            Advertisement.Initialize(_gameId, _testMode);
         }
     }
 
-    public void LoadAd()
-    {
-        Advertisement.Load(_adUnitId, this);
-    }
-
-    // --- 2. ボタンから呼ばれるメイン処理 ---
+    // --- ボタンから呼ばれるメイン処理 ---
     public void LoadTargetScene()
     {
-        // ① まずハイスコアを保存（広告前に確定させる）
+        // ① ハイスコア保存
         if (objectDestroyer != null)
         {
             objectDestroyer.SaveHighScore();
@@ -66,8 +53,17 @@ public class SceneLoaderButton : MonoBehaviour, IUnityAdsInitializationListener,
         // ③ 2回に1回（偶数のとき）広告を出す
         if (gameCount % 2 == 0)
         {
-            Debug.Log("広告を表示します");
-            ShowAd();
+            // 広告の準備ができているか確認して表示
+            if (Advertisement.IsReady(_adUnitId))
+            {
+                Debug.Log("広告を表示します");
+                Advertisement.Show(_adUnitId);
+            }
+            else
+            {
+                Debug.Log("広告の準備ができていません。そのまま移動します。");
+                ExecuteSceneLoad();
+            }
         }
         else
         {
@@ -76,45 +72,40 @@ public class SceneLoaderButton : MonoBehaviour, IUnityAdsInitializationListener,
         }
     }
 
-    // 広告表示の実行
-    public void ShowAd()
-    {
-        // 読み込みが完了していれば表示
-        Advertisement.Show(_adUnitId, this);
-    }
-
-    // --- 3. 実際のシーン移動処理 ---
+    // --- 実際のシーン移動処理 ---
     private void ExecuteSceneLoad()
     {
+        // リスナー解除（エラー防止）
+        Advertisement.RemoveListener(this);
         SceneManager.LoadScene(targetSceneName);
     }
 
-    // --- 4. 広告コールバック（見終わった後の処理） ---
-    
-    // 広告が閉じられたら呼ばれる
-    public void OnUnityAdsShowComplete(string adUnitId, UnityAdsShowCompletionState showCompletionState)
+    // --- IUnityAdsListener の必須機能（広告の結果を受け取る） ---
+
+    public void OnUnityAdsDidFinish(string placementId, ShowResult showResult)
     {
-        if (adUnitId.Equals(_adUnitId) && showCompletionState.Equals(UnityAdsShowCompletionState.COMPLETED))
+        // 広告を見終わった（またはスキップした）場合
+        if (placementId == _adUnitId)
         {
-            Debug.Log("広告視聴完了。シーンへ移動します。");
-            ExecuteSceneLoad(); // ★ここでも移動を実行
-            
-            LoadAd(); // 次回のためにロード
+            Debug.Log("広告終了。シーンへ移動します。");
+            ExecuteSceneLoad();
         }
     }
 
-    // 広告エラー時やスキップ時も、閉じ込められないように移動させる
-    public void OnUnityAdsShowFailure(string adUnitId, UnityAdsShowError error, string message)
+    public void OnUnityAdsDidStart(string placementId)
     {
+        // 広告が始まった瞬間（今回は何もしない）
+    }
+
+    public void OnUnityAdsReady(string placementId)
+    {
+        // 広告の読み込みが完了した瞬間（今回は何もしない）
+    }
+
+    public void OnUnityAdsDidError(string message)
+    {
+        // エラーが起きた場合
         Debug.Log($"広告エラー: {message} -> 強制移動します");
         ExecuteSceneLoad();
     }
-
-    // 初期化・ロード関連のコールバック（ログ出しのみ）
-    public void OnInitializationComplete() { LoadAd(); }
-    public void OnInitializationFailed(UnityAdsInitializationError error, string message) { Debug.Log($"Init失敗: {message}"); }
-    public void OnUnityAdsAdLoaded(string adUnitId) { Debug.Log("Adロード完了"); }
-    public void OnUnityAdsFailedToLoad(string adUnitId, UnityAdsLoadError error, string message) { Debug.Log($"Load失敗: {message}"); }
-    public void OnUnityAdsShowStart(string adUnitId) { }
-    public void OnUnityAdsShowClick(string adUnitId) { }
 }
