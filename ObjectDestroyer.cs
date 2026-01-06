@@ -12,7 +12,10 @@ public class TagScoreInfo
 public class ObjectDestroyer : MonoBehaviour
 {
     public List<TagScoreInfo> tagScoreInfos = new List<TagScoreInfo>();
-    public TextMeshProUGUI scoreText;
+
+    // ★変更点: 1つの変数ではなく、リスト(複数)に変更しました
+    [Header("UI Settings")]
+    public List<TextMeshProUGUI> scoreTexts = new List<TextMeshProUGUI>();
 
     private int currentScore = 0;
 
@@ -41,9 +44,17 @@ public class ObjectDestroyer : MonoBehaviour
         UpdateScoreText();
     }
 
+    // ★変更点: リストに入っている全てのテキストを更新します
     void UpdateScoreText()
     {
-        scoreText.text = currentScore.ToString();
+        foreach (var textMesh in scoreTexts)
+        {
+            // 空の要素があってもエラーにならないようにチェック
+            if (textMesh != null)
+            {
+                textMesh.text = currentScore.ToString();
+            }
+        }
     }
 
     public void SaveHighScore()
