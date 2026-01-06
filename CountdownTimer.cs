@@ -3,8 +3,13 @@ using TMPro;
 
 public class CountdownTimer : MonoBehaviour
 {
-    public TMP_Text timeText; // 時間のTextMeshProオブジェクトをInspectorウィンドウで関連付ける
+    [Header("Time Settings")]
+    public TMP_Text timeText; // 時間のTextMeshPro
     public float countDuration = 10f; // カウントする時間（秒）
+
+    [Header("UI Settings")]
+    // ★追加: ここにUnityエディタから「結果ボードの親オブジェクト」をセットします
+    public GameObject resultBoardUI; 
 
     private float timer; // タイマー
     private bool isCounting = true; // カウント中かどうかのフラグ
@@ -12,8 +17,14 @@ public class CountdownTimer : MonoBehaviour
 
     void Start()
     {
-        timer = countDuration; // タイマーを設定した時間で初期化
-        UpdateTimeText(); // 残り時間を表示するTextMeshProを更新
+        timer = countDuration; // タイマー初期化
+        UpdateTimeText(); // 表示更新
+
+        // ★追加: ゲーム開始時は、結果ボードを隠す
+        if (resultBoardUI != null)
+        {
+            resultBoardUI.SetActive(false);
+        }
     }
 
     void Update()
@@ -24,34 +35,47 @@ public class CountdownTimer : MonoBehaviour
 
             if (timer <= 0f)
             {
-                timer = 0f; // タイマーが負の値にならないように修正
+                timer = 0f; // 負の値にならないように
                 isCounting = false; // カウント終了
-                PauseGame(); // ゲームを一時停止
+                PauseGame(); // ゲーム停止処理へ
             }
 
-            UpdateTimeText(); // タイマーを更新
+            UpdateTimeText(); // 表示更新
         }
 
+        // デバッグ用: Yキーで再開機能（必要なければ削除してもOK）
         if (isPaused && Input.GetKeyDown(KeyCode.Y))
         {
-            ResumeGame(); // キー入力でゲームを再開
+            ResumeGame(); 
         }
     }
 
     void UpdateTimeText()
     {
-        timeText.text = Mathf.CeilToInt(timer).ToString(); // タイマーを整数に変換してTextMeshProに表示
+        timeText.text = Mathf.CeilToInt(timer).ToString(); 
     }
 
     void PauseGame()
     {
-        Time.timeScale = 0f; // ゲーム時間を停止
-        isPaused = true; // 一時停止フラグを立てる
+        Time.timeScale = 0f; // 時間を止める
+        isPaused = true;
+
+        // ★追加: 時間切れで結果ボードを表示する
+        if (resultBoardUI != null)
+        {
+            resultBoardUI.SetActive(true);
+        }
     }
 
     void ResumeGame()
     {
-        Time.timeScale = 1f; // ゲーム時間を再開
-        isPaused = false; // 一時停止フラグを解除
+        Time.timeScale = 1f; // 時間を再開
+        isPaused = false;
+
+        // ★追加: ゲーム再開時は結果ボードを再び隠す
+        if (resultBoardUI != null)
+        {
+            resultBoardUI.SetActive(false);
+        }
     }
 }
