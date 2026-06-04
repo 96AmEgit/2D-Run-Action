@@ -75,7 +75,7 @@ public class SceneLoaderButton : MonoBehaviour, IUnityAdsInitializationListener,
         }
 
         // ② 0.5秒間待機する（この間に広告の裏側の準備などを稼ぐ）
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSecondsRealtime(0.5f);
 
         // ③ 元々の「ハイスコア保存」以降の処理を実行する
         if (objectDestroyer != null)
